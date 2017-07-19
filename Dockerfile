@@ -1,9 +1,10 @@
 FROM python:3
 
-COPY requirements.txt /home/docker/code
-RUN pip install --no-cache-dir -r /home/docker/code/requirements.txt
-COPY . /home/docker/code/
+WORKDIR /usr/src/app
 
-RUN cd /home/docker/code/app/ && python3 bot.py
+COPY requirements.txt ./
+RUN pip install --no-cache-dir -r requirements.txt
 
-EXPOSE 5555
+CMD [ "python", "./bot.py" ]
+
+COPY . .
