@@ -56,8 +56,10 @@ def parse_args(text):
         except ValueError:
             action = ' '.join(args[1:])
 
-    if timeout < 0 or timeout > MAX_TIMEOUT:
+    if timeout < 0:
         timeout = DEFAULT_TIMEOUT
+    elif timeout > MAX_TIMEOUT:
+        timeout = MAX_TIMEOUT
 
     return action, timeout
 
