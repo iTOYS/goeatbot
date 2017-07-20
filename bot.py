@@ -6,6 +6,8 @@ bot = telebot.TeleBot(token='')
 
 chats = {}
 beginner = None
+DEFAULT_TIMEOUT = 10
+DEFAULT_ACTION = 'пожрать 🍕🍗🌯🍔'
 
 
 def get_username(user):
@@ -19,20 +21,47 @@ def get_username(user):
     return name
 
 
-def collecting(chat_id, timeout=180):
+def collecting(chat_id, timeout, action):
     t = 0
+    print('start collecting in chat {}...'.format(chat_id))
     while t < timeout:
         time.sleep(1)
         t += 1
     users = [user[1] for user in chats[chat_id]]
     initiator = users[0]
     print('collected in chat {}: {} by {}'.format(chat_id, users, initiator))
-    bot.send_message(chat_id, 'Го жрать! Состав: {} 🍕🍗🌯🍔\nСобирал {}'.format(' ,'.join(users), initiator))
+    bot.send_message(
+        chat_id,
+        'Го <b>{}</b>!\nСостав: {}\nСобирал {}'.format(action, ' ,'.join(users), initiator),
+        parse_mode='html'
+    )
     chats[chat_id] = []
 
 
-@bot.message_handler(commands=['go'])
+def parse_args(text):
+    args = text.split(' ')
+    timeout = DEFAULT_TIMEOUT
+    action = DEFAULT_ACTION
+
+    if len(args) == 2:
+        try:
+            timeout = int(args[1]) * 60
+        except ValueError:
+            action = args[1]
+
+    if len(args) > 2:
+        try:
+            action = ' '.join(args[1:-1])
+            timeout = int(args[-1]) * 60
+        except ValueError:
+            action = ' '.join(args[1:])
+
+    return action, timeout
+
+
+@bot.message_handler(commands=['go'], content_types=['text'])
 def go(message):
+    action, timeout = parse_args(message.text)
     chat_id = message.chat.id
     user = message.from_user
     username = get_username(user)
@@ -44,11 +73,15 @@ def go(message):
         chats[chat_id] = []
 
     if len(users) == 0:
-        collecting_thread = threading.Thread(target=collecting, args=(chat_id,))
+        bot.send_message(
+            chat_id,
+            '{} предлагает <b>{}</b> через {:.0f} мин.\nЖми /go если тоже хочешь!'.format(username, action, timeout / 60),
+            parse_mode='html'
+        )
+        chats[chat_id].append((user.id, get_username(user)))
+        collecting_thread = threading.Thread(target=collecting, args=(chat_id, timeout, action))
         collecting_thread.daemon = True
         collecting_thread.start()
-        bot.send_message(chat_id, '{} предлагает пожрать 🍕🍗🌯🍔\nЖми /go если тоже хочешь!'.format(username))
-        print('start collecting in chat {}...'.format(chat_id))
 
     if (user.id, username) not in users:
         chats[chat_id].append((user.id, get_username(user)))
