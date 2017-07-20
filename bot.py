@@ -6,9 +6,9 @@ bot = telebot.TeleBot(token='')
 
 chats = {}
 beginner = None
-DEFAULT_TIMEOUT = 10
+DEFAULT_TIMEOUT = 180
 DEFAULT_ACTION = 'пожрать 🍕🍗🌯🍔'
-
+MAX_TIMEOUT = 600
 
 def get_username(user):
     name = ''
@@ -32,7 +32,7 @@ def collecting(chat_id, timeout, action):
     print('collected in chat {}: {} by {}'.format(chat_id, users, initiator))
     bot.send_message(
         chat_id,
-        'Го <b>{}</b>!\nСостав: {}\nСобирал {}'.format(action, ' ,'.join(users), initiator),
+        'Го <b>{}</b>!\nСостав:\n{}\nСобирал {}'.format(action, ' ,'.join(users), initiator),
         parse_mode='html'
     )
     chats[chat_id] = []
@@ -56,6 +56,9 @@ def parse_args(text):
         except ValueError:
             action = ' '.join(args[1:])
 
+    if timeout < 0 or timeout > MAX_TIMEOUT:
+        timeout = DEFAULT_TIMEOUT
+
     return action, timeout
 
 
@@ -66,13 +69,10 @@ def go(message):
     user = message.from_user
     username = get_username(user)
 
-    if chat_id in chats:
-        users = chats[chat_id]
-    else:
-        users = []
+    if chat_id not in chats:
         chats[chat_id] = []
 
-    if len(users) == 0:
+    if len(chats[chat_id]) == 0:
         bot.send_message(
             chat_id,
             '{} предлагает <b>{}</b> через {:.0f} мин.\nЖми /go если тоже хочешь!'.format(username, action, timeout / 60),
@@ -83,7 +83,7 @@ def go(message):
         collecting_thread.daemon = True
         collecting_thread.start()
 
-    if (user.id, username) not in users:
+    if (user.id, username) not in chats[chat_id]:
         chats[chat_id].append((user.id, get_username(user)))
         print('added user {}:{} to chat {} queue'.format(get_username(user), user.id, chat_id))
 
