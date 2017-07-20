@@ -1,8 +1,11 @@
 import telebot
 import time
 import threading
+import os
 
-bot = telebot.TeleBot(token='')
+TOKEN = os.environ['TOKEN']
+
+bot = telebot.TeleBot(token=TOKEN)
 
 chats = {}
 beginner = None
