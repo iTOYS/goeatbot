@@ -35,7 +35,7 @@ def collecting(chat_id, timeout, action):
     print('collected in chat {}: {} by {}'.format(chat_id, users, initiator))
     bot.send_message(
         chat_id,
-        'Го <b>{}</b>!\nСостав:\n{}\nСобирал {}'.format(action, ' ,'.join(users), initiator),
+        'Го <b>{}</b>!\nСостав:\n{}\nСобирал {}'.format(action, ', '.join(users), initiator),
         parse_mode='html'
     )
     chats[chat_id] = []
